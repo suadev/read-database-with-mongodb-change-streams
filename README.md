@@ -1,5 +1,3 @@
-# read-database-with-mongodb-change-streams
-
 A working demo of the **read-database pattern** where a source-of-truth lives in
 MongoDB and a denormalized, query-optimized read model is maintained in
 Elasticsearch in near real-time via **MongoDB Change Streams**.
