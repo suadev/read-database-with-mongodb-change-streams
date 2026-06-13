@@ -1,0 +1,110 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Services.ReadModelBuilder (Local)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/Services.ReadModelBuilder/bin/Debug/net10.0/Services.ReadModelBuilder.dll",
+      "cwd": "${workspaceFolder}/src/Services.ReadModelBuilder",
+      "args": [],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "suppressJITOptimizations": true,
+      "justMyCode": false,
+      "requireExactSource": false,
+      "enableStepFiltering": true,
+      "sourceLinkOptions": {
+        "*": { "enabled": true }
+      },
+      "symbolOptions": {
+        "searchMicrosoftSymbolServer": true,
+        "searchNuGetOrgSymbolServer": true
+      }
+    },
+    {
+      "name": "Services.Customers (Local)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/Services.Customers/bin/Debug/net10.0/Services.Customers.dll",
+      "cwd": "${workspaceFolder}/src/Services.Customers",
+      "args": [],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "suppressJITOptimizations": true,
+      "justMyCode": false,
+      "requireExactSource": false,
+      "enableStepFiltering": true,
+      "sourceLinkOptions": {
+        "*": { "enabled": true }
+      }
+    },
+    {
+      "name": "Services.Products (Local)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/Services.Products/bin/Debug/net10.0/Services.Products.dll",
+      "cwd": "${workspaceFolder}/src/Services.Products",
+      "args": [],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "suppressJITOptimizations": true,
+      "justMyCode": false,
+      "requireExactSource": false,
+      "enableStepFiltering": true,
+      "sourceLinkOptions": {
+        "*": { "enabled": true }
+      }
+    },
+    {
+      "name": "Services.Orders (Local)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/Services.Orders/bin/Debug/net10.0/Services.Orders.dll",
+      "cwd": "${workspaceFolder}/src/Services.Orders",
+      "args": [],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development"
+      },
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "suppressJITOptimizations": true,
+      "justMyCode": false,
+      "requireExactSource": false,
+      "enableStepFiltering": true,
+      "sourceLinkOptions": {
+        "*": { "enabled": true }
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "All",
+      "configurations": [
+        "Services.Customers (Local)",
+        "Services.Products (Local)",
+        "Services.Orders (Local)",
+        "Services.ReadModelBuilder (Local)"
+      ],
+      "stopAll": true,
+      "preLaunchTask": "build"
+    }
+  ]
+}

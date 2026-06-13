@@ -1,0 +1,392 @@
+{
+  "info": {
+    "name": "read-database-with-mongodb-change-streams",
+    "description": "Collection covering every HTTP endpoint exposed by Services.Customers, Services.Products, Services.Orders, and Services.ReadModelBuilder. Seed UUIDs match .scripts/seed_customers.sh and .scripts/seed_products.sh so the create/update/delete requests work against records produced by those scripts.\n\nWorkflow: import → start services (bash .scripts/start_all.sh) → optionally seed (bash .scripts/seed_customers.sh && bash .scripts/seed_products.sh) → run requests. For order-scoped requests, run 'Create Order' first, then copy the returned id into the 'orderId' collection variable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "1a2b3c4d-5e6f-7890-abcd-ef1234567890"
+  },
+  "variable": [
+    { "key": "customersUrl", "value": "http://localhost:5101", "type": "string" },
+    { "key": "productsUrl", "value": "http://localhost:5102", "type": "string" },
+    { "key": "ordersUrl", "value": "http://localhost:5103", "type": "string" },
+    { "key": "listenerUrl", "value": "http://localhost:5100", "type": "string" },
+    { "key": "elasticUrl", "value": "http://localhost:9200", "type": "string" },
+
+    { "key": "customerId1", "value": "11111111-1111-1111-1111-111111111101", "type": "string" },
+    { "key": "customerId2", "value": "11111111-1111-1111-1111-111111111102", "type": "string" },
+    { "key": "customerId3", "value": "11111111-1111-1111-1111-111111111103", "type": "string" },
+    { "key": "customerId4", "value": "11111111-1111-1111-1111-111111111104", "type": "string" },
+    { "key": "customerId5", "value": "11111111-1111-1111-1111-111111111105", "type": "string" },
+
+    { "key": "productId1", "value": "22222222-2222-2222-2222-222222222201", "type": "string" },
+    { "key": "productId2", "value": "22222222-2222-2222-2222-222222222202", "type": "string" },
+    { "key": "productId3", "value": "22222222-2222-2222-2222-222222222203", "type": "string" },
+    { "key": "productId4", "value": "22222222-2222-2222-2222-222222222204", "type": "string" },
+    { "key": "productId5", "value": "22222222-2222-2222-2222-222222222205", "type": "string" },
+
+    { "key": "orderId", "value": "", "type": "string", "description": "Set this after running 'Create Order' so the order-scoped requests below work." }
+  ],
+  "item": [
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{customersUrl}}/customers?skip=0&take=50",
+              "host": ["{{customersUrl}}"],
+              "path": ["customers"],
+              "query": [
+                { "key": "skip", "value": "0" },
+                { "key": "take", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Batch Get Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{customersUrl}}/customers/batch?ids={{customerId1}},{{customerId2}},{{customerId3}}",
+              "host": ["{{customersUrl}}"],
+              "path": ["customers", "batch"],
+              "query": [
+                {
+                  "key": "ids",
+                  "value": "{{customerId1}},{{customerId2}},{{customerId3}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Customer By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{customersUrl}}/customers/{{customerId1}}",
+              "host": ["{{customersUrl}}"],
+              "path": ["customers", "{{customerId1}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Customer (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{customerId1}}\",\n  \"name\": \"Ali Yilmaz\",\n  \"email\": \"ali.yilmaz@example.com\",\n  \"phone\": \"+905300000001\"\n}"
+            },
+            "url": {
+              "raw": "{{customersUrl}}/customers",
+              "host": ["{{customersUrl}}"],
+              "path": ["customers"]
+            },
+            "description": "POST accepts an optional client-provided id. Body matches CreateCustomerRequest. Returns 201 with the created customer."
+          }
+        },
+        {
+          "name": "Upsert Customer (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ali Yilmaz (updated)\",\n  \"email\": \"ali.updated@example.com\",\n  \"phone\": \"+905300000099\"\n}"
+            },
+            "url": {
+              "raw": "{{customersUrl}}/customers/{{customerId1}}",
+              "host": ["{{customersUrl}}"],
+              "path": ["customers", "{{customerId1}}"]
+            },
+            "description": "PUT is idempotent create-or-replace. Returns 201 if the customer did not exist, 200 if it did."
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{customersUrl}}/customers/{{customerId5}}",
+              "host": ["{{customersUrl}}"],
+              "path": ["customers", "{{customerId5}}"]
+            },
+            "description": "Returns 204 on success, 404 if the id does not exist."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{productsUrl}}/products?skip=0&take=50",
+              "host": ["{{productsUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "skip", "value": "0" },
+                { "key": "take", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Batch Get Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{productsUrl}}/products/batch?ids={{productId1}},{{productId2}},{{productId3}}",
+              "host": ["{{productsUrl}}"],
+              "path": ["products", "batch"],
+              "query": [
+                {
+                  "key": "ids",
+                  "value": "{{productId1}},{{productId2}},{{productId3}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{productsUrl}}/products/{{productId1}}",
+              "host": ["{{productsUrl}}"],
+              "path": ["products", "{{productId1}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Product (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{productId1}}\",\n  \"name\": \"Wireless Mouse\",\n  \"sku\": \"MOUSE-001\",\n  \"price\": 499.90\n}"
+            },
+            "url": {
+              "raw": "{{productsUrl}}/products",
+              "host": ["{{productsUrl}}"],
+              "path": ["products"]
+            },
+            "description": "POST accepts an optional client-provided id. Returns 201."
+          }
+        },
+        {
+          "name": "Upsert Product (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wireless Mouse (updated)\",\n  \"sku\": \"MOUSE-001\",\n  \"price\": 549.00\n}"
+            },
+            "url": {
+              "raw": "{{productsUrl}}/products/{{productId1}}",
+              "host": ["{{productsUrl}}"],
+              "path": ["products", "{{productId1}}"]
+            },
+            "description": "PUT is idempotent create-or-replace. 201 if missing, 200 if existing."
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{productsUrl}}/products/{{productId5}}",
+              "host": ["{{productsUrl}}"],
+              "path": ["products", "{{productId5}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ordersUrl}}/orders?skip=0&take=50",
+              "host": ["{{ordersUrl}}"],
+              "path": ["orders"],
+              "query": [
+                { "key": "skip", "value": "0" },
+                { "key": "take", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Order By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ordersUrl}}/orders/{{orderId}}",
+              "host": ["{{ordersUrl}}"],
+              "path": ["orders", "{{orderId}}"]
+            },
+            "description": "Requires the `orderId` collection variable. Set it manually after running 'Create Order'."
+          }
+        },
+        {
+          "name": "Create Order (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId1}}\",\n  \"paymentMethod\": \"CreditCard\",\n  \"currency\": \"TRY\",\n  \"shippingAddress\": \"123 Sample St, Istanbul\",\n  \"billingAddress\": \"123 Sample St, Istanbul\",\n  \"items\": [\n    { \"productId\": \"{{productId1}}\", \"quantity\": 2 },\n    { \"productId\": \"{{productId2}}\", \"quantity\": 1 }\n  ],\n  \"notes\": \"Created from Postman\",\n  \"discountAmount\": null,\n  \"shippingCost\": 49.90,\n  \"taxAmount\": null\n}"
+            },
+            "url": {
+              "raw": "{{ordersUrl}}/orders",
+              "host": ["{{ordersUrl}}"],
+              "path": ["orders"]
+            },
+            "description": "Order service fetches each product's price from Services.Products and computes UnitPrice / LineTotal / SubTotal / TotalAmount. Returns 201 with the full OrderDto.\n\nCopy the returned `id` into the `orderId` collection variable to enable the Get/Update/Delete requests below."
+          }
+        },
+        {
+          "name": "Replace Order (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethod\": \"BankTransfer\",\n  \"currency\": \"USD\",\n  \"shippingAddress\": \"456 Updated St, Ankara\",\n  \"billingAddress\": \"456 Updated St, Ankara\",\n  \"items\": [\n    { \"productId\": \"{{productId3}}\", \"quantity\": 3 }\n  ],\n  \"notes\": \"Updated via Postman PUT\",\n  \"discountAmount\": 25.00,\n  \"shippingCost\": 30.00,\n  \"taxAmount\": null\n}"
+            },
+            "url": {
+              "raw": "{{ordersUrl}}/orders/{{orderId}}",
+              "host": ["{{ordersUrl}}"],
+              "path": ["orders", "{{orderId}}"]
+            },
+            "description": "Full replace. Recomputes amounts based on the new items. 404 if the order does not exist."
+          }
+        },
+        {
+          "name": "Update Order Status (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Shipped\",\n  \"cancellationReason\": null\n}"
+            },
+            "url": {
+              "raw": "{{ordersUrl}}/orders/{{orderId}}/status",
+              "host": ["{{ordersUrl}}"],
+              "path": ["orders", "{{orderId}}", "status"]
+            },
+            "description": "Allowed statuses: Placed, Confirmed, Shipped, Delivered, Cancelled. This triggers the change-stream listener's partial-update path (only Status + UpdatedAt are $set)."
+          }
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{ordersUrl}}/orders/{{orderId}}",
+              "host": ["{{ordersUrl}}"],
+              "path": ["orders", "{{orderId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Listener",
+      "item": [
+        {
+          "name": "Init Snapshot",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{listenerUrl}}/init-snapshot",
+              "host": ["{{listenerUrl}}"],
+              "path": ["init-snapshot"]
+            },
+            "description": "Kicks off a full snapshot — the listener iterates the entire Orders collection, enriches each one, and bulk-upserts into the Elasticsearch order-details index. Returns 202 with `{ id }` of the snapshot tracking document."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Elasticsearch (read-model checks)",
+      "item": [
+        {
+          "name": "Count order-details docs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{elasticUrl}}/order-details/_count",
+              "host": ["{{elasticUrl}}"],
+              "path": ["order-details", "_count"]
+            },
+            "description": "Convenience request: confirms how many enriched OrderDetail documents the listener has written to Elasticsearch."
+          }
+        },
+        {
+          "name": "Search order-details (match_all)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": 10,\n  \"query\": { \"match_all\": {} }\n}"
+            },
+            "url": {
+              "raw": "{{elasticUrl}}/order-details/_search",
+              "host": ["{{elasticUrl}}"],
+              "path": ["order-details", "_search"]
+            },
+            "description": "Returns the first 10 OrderDetail documents — handy for verifying customer/product enrichment fields are populated."
+          }
+        }
+      ]
+    }
+  ]
+}

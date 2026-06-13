@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Services.ReadModelBuilder/Services.ReadModelBuilder.csproj" />
+    <Project Path="src/Services.Customers/Services.Customers.csproj" />
+    <Project Path="src/Services.Orders/Services.Orders.csproj" />
+    <Project Path="src/Services.Products/Services.Products.csproj" />
+  </Folder>
+</Solution>

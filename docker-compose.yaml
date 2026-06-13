@@ -1,0 +1,85 @@
+name: read-database-with-mongodb-change-streams
+
+services:
+  mongo:
+    image: mongo:8.0.4
+    container_name: source-db-mongo
+    restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27018"]
+    ports:
+      - "27018:27018"
+    volumes:
+      - source-db-mongo-data:/data/db
+    networks:
+      - read-db-demo-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--port", "27018", "--eval", "try { rs.status().ok } catch(e) { 0 }"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  # One-shot: initiates the replica set the first time the cluster comes up.
+  # Idempotent — if rs.status() is already ok, it's a no-op.
+  mongo-init:
+    image: mongo:8.0.4
+    container_name: source-db-mongo-init
+    depends_on:
+      mongo:
+        condition: service_started
+    restart: "no"
+    networks:
+      - read-db-demo-network
+    entrypoint:
+      - bash
+      - -c
+      - |
+        set -e
+        echo "Waiting for mongo to accept connections..."
+        until mongosh --host mongo:27018 --quiet --eval "db.runCommand({ ping: 1 }).ok" | grep -q 1; do
+          sleep 1
+        done
+        echo "Initiating replica set if needed..."
+        mongosh --host mongo:27018 --quiet --eval '
+          try {
+            rs.status();
+            print("replica set already initiated");
+          } catch (e) {
+            rs.initiate({ _id: "rs0", members: [ { _id: 0, host: "localhost:27018" } ] });
+            print("replica set initiated");
+          }
+        '
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.0
+    container_name: read-db-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - cluster.routing.allocation.disk.threshold_enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - read-db-elastic-data:/usr/share/elasticsearch/data
+    networks:
+      - read-db-demo-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+volumes:
+  source-db-mongo-data:
+    name: source-db-mongo-data
+  read-db-elastic-data:
+    name: read-db-elastic-data
+
+networks:
+  read-db-demo-network:
+    name: read-db-demo-network
+    driver: bridge
